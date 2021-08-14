@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+option go_package = "./proto";
+
+service Fibonacci {
+  rpc GetFibonacci(Request) returns (Response) {}
+}
+
+message Request {
+  int32 start = 1;
+  int32 end = 2;
+}
+
+message Response {
+  string fibslice = 1;
+}

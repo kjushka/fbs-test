@@ -1,0 +1,26 @@
+version: "3.5"
+services:
+  server:
+    container_name: server-d
+    image: server-d
+    network_mode: host
+    expose:
+      - 8090
+      - 8070
+    depends_on:
+      - redis
+    security_opt:
+      - seccomp:unconfined
+    cap_add:
+      - SYS_PTRACE
+    environment:
+      - REDIS_PORT=6379
+      - REDIS_ADDR=localhost
+    restart: always
+
+  redis:
+    container_name: redis
+    image: redis
+    expose:
+      - 6379
+    restart: always
