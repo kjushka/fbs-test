@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fib_grpc/proto"
 	"fmt"
 	"github.com/go-redis/redis/v8"
@@ -43,41 +42,6 @@ func initFibArray() []uint64 {
 	}
 
 	return initArray
-}
-
-func writeData(fibData []uint64) error {
-	ctx := context.Background()
-
-	jsonFibData, err := json.Marshal(fibData)
-	if err != nil {
-		return err
-	}
-
-	status := rds.Set(ctx, "fib", string(jsonFibData), 0)
-	if status.Err() != nil {
-		return status.Err()
-	}
-	return nil
-}
-
-func readData() ([]uint64, error) {
-	val, err := rds.Get(context.Background(), "fib").Result()
-	switch {
-	case err == redis.Nil:
-		log.Println("key does not exist")
-		return nil, err
-	case err != nil:
-		log.Println("get failed: ", err)
-		return nil, err
-	case val == "":
-		err = errors.New("value is empty")
-		log.Println(err)
-		return nil, err
-	}
-	var fibSlice []uint64
-	json.Unmarshal([]byte(val), &fibSlice)
-
-	return fibSlice, nil
 }
 
 type fibonacciServer struct {
@@ -142,14 +106,14 @@ func getFibSliceByIndexes(start, end int32) ([]uint64, error) {
 		go writeData(fibArr)
 	}
 
-	return fibArr[start-1:end], nil
+	return fibArr[start-1 : end], nil
 }
 
 func calculateToNewEnd(fibArray []uint64, newEnd int) []uint64 {
 	newFibArray := make([]uint64, 0, newEnd)
 	newFibArray = append(newFibArray, fibArray...)
 	for i := len(fibArray); i < newEnd; i++ {
-		newFibArray = append(newFibArray, newFibArray[i-1] + newFibArray[i-2])
+		newFibArray = append(newFibArray, newFibArray[i-1]+newFibArray[i-2])
 	}
 	return newFibArray
 }
@@ -182,7 +146,7 @@ func startGrpcListener(errChan chan<- error) {
 	errChan <- err
 }
 
-func startHttpListener(errChan chan<-error) {
+func startHttpListener(errChan chan<- error) {
 	http.HandleFunc("/get", HttpFibAction)
 	log.Println("Http listen localhost:8070")
 	err := http.ListenAndServe(":8070", nil)

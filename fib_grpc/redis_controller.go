@@ -1,6 +1,14 @@
 package main
 
-/*func writeData(fibData []uint64) error {
+import (
+	"context"
+	"encoding/json"
+	"errors"
+	"github.com/go-redis/redis/v8"
+	"log"
+)
+
+func writeData(fibData []uint64) error {
 	ctx := context.Background()
 
 	jsonFibData, err := json.Marshal(fibData)
@@ -30,7 +38,9 @@ func readData() ([]uint64, error) {
 		return nil, err
 	}
 	var fibSlice []uint64
-	json.Unmarshal([]byte(val), &fibSlice)
-
+	err = json.Unmarshal([]byte(val), &fibSlice)
+	if err != nil {
+		return nil, err
+	}
 	return fibSlice, nil
-}*/
+}
