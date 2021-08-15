@@ -73,7 +73,7 @@ func GetFibonacciHttp(w http.ResponseWriter, r *http.Request) {
 }
 
 func startHttpListener(errChan chan<- error) {
-	http.HandleFunc("/get", GetFibonacciHttp)
+	http.HandleFunc("/fib", GetFibonacciHttp)
 	log.Println("Http listen localhost:8070")
 	err := http.ListenAndServe(":8070", nil)
 	errChan <- err
