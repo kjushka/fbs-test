@@ -14,7 +14,7 @@ services:
     cap_add:
       - SYS_PTRACE
     environment:
-      - INIT_SIZE=50
+      - INIT_SIZE=${INIT_SIZE:-50}
       - REDIS_PORT=6379
       - REDIS_ADDR=localhost
     restart: always
@@ -24,4 +24,7 @@ services:
     image: redis
     expose:
       - 6379
+    command: redis-server /usr/local/etc/redis/redis.conf
+    volumes:
+      - ./redis.conf:/usr/local/etc/redis/redis.conf
     restart: always

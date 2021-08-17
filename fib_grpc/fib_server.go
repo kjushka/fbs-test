@@ -6,7 +6,6 @@ import (
 	"fib_grpc/slice"
 	"google.golang.org/grpc"
 	"log"
-	"math/big"
 	"net"
 	"net/http"
 	"strconv"
@@ -18,30 +17,18 @@ type fibonacciServer struct {
 
 func (s *fibonacciServer) GetFibonacci(ctx context.Context, request *proto.Request) (*proto.Response, error) {
 	log.Println("[Fibonacci grpc]")
-	fibSlice, err := slice.GetFibSliceByIndexes(request.GetStart(), request.GetEnd())
+	fibSlice, err := slice.GetFibSliceByIndexes(ctx, request.GetStart(), request.GetEnd())
 	if err != nil {
 		log.Println("error in getting slice: ", err)
 		return nil, err
 	}
 
-	grpcSlice, err := castSliceToGrpcType(fibSlice)
+	grpcSlice, err := slice.CastSliceToGrpcType(fibSlice)
 	if err != nil {
 		return nil, err
 	}
 
 	return &proto.Response{Slice: grpcSlice}, nil
-}
-
-func castSliceToGrpcType(fibSlice []*big.Int) ([]*proto.BigInt, error) {
-	grpcSlice := make([]*proto.BigInt, len(fibSlice))
-	for i := range fibSlice {
-		elem, err := fibSlice[i].MarshalText()
-		if err != nil {
-			return nil, err
-		}
-		grpcSlice[i] = &proto.BigInt{BigInt: elem}
-	}
-	return grpcSlice, nil
 }
 
 func startGrpcListener(errChan chan<- error) {
@@ -77,7 +64,10 @@ func GetFibonacciHttp(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fibSlice, err := slice.GetFibSliceByIndexes(int32(start), int32(end))
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	fibSlice, err := slice.GetFibSliceByIndexes(ctx, int32(start), int32(end))
 	if err != nil {
 		log.Println("error in getting slice: ", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)

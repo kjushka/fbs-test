@@ -10,9 +10,7 @@ import (
 	"strconv"
 )
 
-func writeData(fibSlice []*big.Int, key int32) error {
-	ctx := context.Background()
-
+func writeData(ctx context.Context, fibSlice []*big.Int, key int32) error {
 	jsonFibData, err := json.Marshal(fibSlice)
 	if err != nil {
 		return err
@@ -25,17 +23,16 @@ func writeData(fibSlice []*big.Int, key int32) error {
 		return status.Err()
 	}
 
-	log.Println("data written with length: ", len(fibSlice))
 	return nil
 }
 
-func readData(key int32) ([]*big.Int, error) {
+func readData(ctx context.Context, key int32) ([]*big.Int, error) {
 	keyStr := strconv.FormatInt(int64(key), 10)
-	val, err := rds.Get(context.Background(), keyStr).Result()
+	val, err := rds.Get(ctx, keyStr).Result()
 	switch {
 	case err == redis.Nil:
 		log.Println("key does not exist")
-		return nil, err
+		return []*big.Int{}, nil
 	case err != nil:
 		log.Println("get failed: ", err)
 		return nil, err
@@ -50,6 +47,5 @@ func readData(key int32) ([]*big.Int, error) {
 		return nil, err
 	}
 
-	log.Println("data read with length: ", len(fibSlice))
 	return fibSlice, nil
 }

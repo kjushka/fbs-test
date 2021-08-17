@@ -1,6 +1,9 @@
 package slice
 
 import (
+	"context"
+	"errors"
+	"fib_grpc/proto"
 	"fmt"
 	"github.com/go-redis/redis/v8"
 	"log"
@@ -13,6 +16,7 @@ import (
 
 var rds *redis.Client
 var maxLen int32
+var initSizeOfArray int
 
 func init() {
 	initSize, err := strconv.Atoi(os.Getenv("INIT_SIZE"))
@@ -20,6 +24,7 @@ func init() {
 		log.Println("Init size should be number and more than 1")
 		initSize = 2
 	}
+	initSizeOfArray = initSize
 
 	fibInit := InitFibArray(initSize)
 
@@ -32,7 +37,7 @@ func init() {
 	})
 
 	atomic.StoreInt32(&maxLen, int32(initSize))
-	err = writeData(fibInit, int32(initSize))
+	err = writeData(context.Background(), fibInit, int32(initSize))
 	if err != nil {
 		log.Println(err)
 	}
@@ -53,10 +58,14 @@ func InitFibArray(end int) []*big.Int {
 	return initArray
 }
 
-func GetFibSliceByIndexes(start, end int32) ([]*big.Int, error) {
-	fibArr, err := readData(atomic.LoadInt32(&maxLen))
+func GetFibSliceByIndexes(ctx context.Context, start, end int32) ([]*big.Int, error) {
+	fibArr, err := readData(ctx, atomic.LoadInt32(&maxLen))
 	if err != nil {
 		return nil, err
+	}
+	if len(fibArr) == 0 {
+		fibArr = InitFibArray(initSizeOfArray)
+		atomic.StoreInt32(&maxLen, int32(initSizeOfArray))
 	}
 
 	if start < 0 {
@@ -70,7 +79,7 @@ func GetFibSliceByIndexes(start, end int32) ([]*big.Int, error) {
 	if int(end) >= len(fibArr) {
 		fibArr = CalculateToNewEnd(fibArr, int(end+1))
 		if end+1 > atomic.LoadInt32(&maxLen) {
-			err = writeData(fibArr, maxLen)
+			err = writeData(ctx, fibArr, maxLen)
 			if err != nil {
 				return nil, err
 			} else {
@@ -107,4 +116,28 @@ func ConvertIntArrayToStr(values []*big.Int) string {
 	}
 
 	return fmt.Sprintf("[%s]", strings.Join(valuesText, ", "))
+}
+
+func CastSliceToGrpcType(fibSlice []*big.Int) ([]*proto.BigInt, error) {
+	grpcSlice := make([]*proto.BigInt, len(fibSlice))
+	for i := range fibSlice {
+		elem, err := fibSlice[i].MarshalText()
+		if err != nil {
+			return nil, err
+		}
+		grpcSlice[i] = &proto.BigInt{BigInt: elem}
+	}
+	return grpcSlice, nil
+}
+
+func CastSliceToBigInt(slice []*proto.BigInt) ([]*big.Int, error) {
+	fibSlice := make([]*big.Int, len(slice))
+	for i := range slice {
+		elem, ok := new(big.Int).SetString(string(slice[i].GetBigInt()), 0)
+		if !ok {
+			return nil, errors.New("error in casting bigInts")
+		}
+		fibSlice[i] = elem
+	}
+	return fibSlice, nil
 }

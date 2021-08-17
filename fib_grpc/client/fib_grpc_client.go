@@ -2,11 +2,10 @@ package main
 
 import (
 	"context"
-	"errors"
 	"fib_grpc/proto"
+	"fib_grpc/slice"
 	"google.golang.org/grpc"
 	"log"
-	"math/big"
 	"math/rand"
 	"sync"
 	"time"
@@ -28,7 +27,7 @@ func main() {
 	wg := &sync.WaitGroup{}
 	wg.Add(100)
 	for i := 0; i < 100; i++ {
-		time.Sleep(500 * time.Microsecond)
+		time.Sleep(2000 * time.Microsecond)
 		go func(wg *sync.WaitGroup) {
 			defer wg.Done()
 			start, end := rand.Int31n(150), rand.Int31n(160)
@@ -37,24 +36,12 @@ func main() {
 				log.Println(err)
 				return
 			}
-			slice, err := castSliceToBigInt(fibSlice.GetSlice())
+			grpcSlice, err := slice.CastSliceToBigInt(fibSlice.GetSlice())
 			if err != nil {
 				log.Println(err)
 			}
-			log.Println(slice)
+			log.Println(grpcSlice)
 		}(wg)
 	}
 	wg.Wait()
-}
-
-func castSliceToBigInt(slice []*proto.BigInt) ([]*big.Int, error) {
-	fibSlice := make([]*big.Int, len(slice))
-	for i := range slice {
-		elem, ok := new(big.Int).SetString(string(slice[i].GetBigInt()), 0)
-		if !ok {
-			return nil, errors.New("error in casting bigInts")
-		}
-		fibSlice[i] = elem
-	}
-	return fibSlice, nil
 }
