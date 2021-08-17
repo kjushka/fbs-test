@@ -1,10 +1,6 @@
 package slice
 
-import (
-	"testing"
-)
-
-func TestConvertIntArrayToStr(t *testing.T) {
+/*func TestConvertIntArrayToStr(t *testing.T) {
 	initSlice := []uint64{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}
 	strInitSlice := ConvertIntArrayToStr(initSlice)
 	if strInitSlice != "[1, 2, 3, 4, 5, 6, 7, 8, 9, 10]" {
@@ -61,4 +57,4 @@ func TestCalculateToNewEnd(t *testing.T) {
 	if compare := []uint64{0, 1, 1, 2, 3}; !uint64SliceEquals(newFibArrayWithEnd4, compare) {
 		t.Errorf("Calculate new end array with end 4 failed")
 	}
-}
+}*/

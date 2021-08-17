@@ -1,7 +1,0 @@
-FROM golang AS builder
-WORKDIR /fbs-test
-COPY fib_grpc ./
-RUN go mod download
-RUN go build fib_grpc
-
-ENTRYPOINT [ "./fib_grpc" ]

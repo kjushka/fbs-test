@@ -1,0 +1,28 @@
+##
+## Build
+##
+
+FROM golang:1.16-alpine as build
+
+WORKDIR /app
+
+COPY ./fib_grpc ./
+RUN go mod download
+
+RUN go build -o /fib_grpc
+
+##
+## Deploy
+##
+
+FROM gcr.io/distroless/base-debian10
+
+WORKDIR /
+
+COPY --from=build /fib_grpc /fib_grpc
+
+EXPOSE 8070 8090
+
+USER nonroot:nonroot
+
+ENTRYPOINT ["./fib_grpc"]

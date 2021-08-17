@@ -1,8 +1,8 @@
 version: "3.5"
 services:
   server:
-    container_name: server-d
-    image: server-d
+    container_name: fib_grpc
+    image: fib_grpc:multistage
     network_mode: host
     expose:
       - 8090

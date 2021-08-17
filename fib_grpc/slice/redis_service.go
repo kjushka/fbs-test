@@ -6,25 +6,32 @@ import (
 	"errors"
 	"github.com/go-redis/redis/v8"
 	"log"
+	"math/big"
+	"strconv"
 )
 
-func writeData(fibData []uint64) error {
+func writeData(fibSlice []*big.Int, key int32) error {
 	ctx := context.Background()
 
-	jsonFibData, err := json.Marshal(fibData)
+	jsonFibData, err := json.Marshal(fibSlice)
 	if err != nil {
 		return err
 	}
 
-	status := rds.Set(ctx, "fib", string(jsonFibData), 0)
+	keyStr := strconv.FormatInt(int64(key), 10)
+
+	status := rds.Set(ctx, keyStr, string(jsonFibData), 0)
 	if status.Err() != nil {
 		return status.Err()
 	}
+
+	log.Println("data written with length: ", len(fibSlice))
 	return nil
 }
 
-func readData() ([]uint64, error) {
-	val, err := rds.Get(context.Background(), "fib").Result()
+func readData(key int32) ([]*big.Int, error) {
+	keyStr := strconv.FormatInt(int64(key), 10)
+	val, err := rds.Get(context.Background(), keyStr).Result()
 	switch {
 	case err == redis.Nil:
 		log.Println("key does not exist")
@@ -37,10 +44,12 @@ func readData() ([]uint64, error) {
 		log.Println(err)
 		return nil, err
 	}
-	var fibSlice []uint64
+	var fibSlice []*big.Int
 	err = json.Unmarshal([]byte(val), &fibSlice)
 	if err != nil {
 		return nil, err
 	}
+
+	log.Println("data read with length: ", len(fibSlice))
 	return fibSlice, nil
 }

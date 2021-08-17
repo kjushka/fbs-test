@@ -2,10 +2,13 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fib_grpc/proto"
-	"fmt"
 	"google.golang.org/grpc"
 	"log"
+	"math/big"
+	"math/rand"
+	"sync"
 	"time"
 )
 
@@ -20,12 +23,38 @@ func main() {
 
 	client := proto.NewFibonacciClient(conn)
 
-	ctx, cancel := context.WithTimeout(context.Background(), 10 * time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	fibSlice, err := client.GetFibonacci(ctx, &proto.Request{Start: 0, End: 62})
-	if err != nil {
-		log.Println(err)
-		return
+	wg := &sync.WaitGroup{}
+	wg.Add(100)
+	for i := 0; i < 100; i++ {
+		time.Sleep(500 * time.Microsecond)
+		go func(wg *sync.WaitGroup) {
+			defer wg.Done()
+			start, end := rand.Int31n(150), rand.Int31n(160)
+			fibSlice, err := client.GetFibonacci(ctx, &proto.Request{Start: start, End: end})
+			if err != nil {
+				log.Println(err)
+				return
+			}
+			slice, err := castSliceToBigInt(fibSlice.GetSlice())
+			if err != nil {
+				log.Println(err)
+			}
+			log.Println(slice)
+		}(wg)
 	}
-	fmt.Println(fibSlice.Fibslice)
+	wg.Wait()
+}
+
+func castSliceToBigInt(slice []*proto.BigInt) ([]*big.Int, error) {
+	fibSlice := make([]*big.Int, len(slice))
+	for i := range slice {
+		elem, ok := new(big.Int).SetString(string(slice[i].GetBigInt()), 0)
+		if !ok {
+			return nil, errors.New("error in casting bigInts")
+		}
+		fibSlice[i] = elem
+	}
+	return fibSlice, nil
 }

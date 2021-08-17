@@ -15,6 +15,6 @@ logs:
 
 reload:
 	docker-compose down
-	docker build . -f ./server-d -t server-d
+	docker build -t fib_grpc:multistage -f Dockerfile.multistage .
 	docker-compose up -d
 	docker-compose logs -f

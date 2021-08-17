@@ -2,11 +2,11 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"fib_grpc/proto"
 	"fib_grpc/slice"
 	"google.golang.org/grpc"
 	"log"
+	"math/big"
 	"net"
 	"net/http"
 	"strconv"
@@ -24,9 +24,24 @@ func (s *fibonacciServer) GetFibonacci(ctx context.Context, request *proto.Reque
 		return nil, err
 	}
 
-	jsonArray, err := json.Marshal(fibSlice)
+	grpcSlice, err := castSliceToGrpcType(fibSlice)
+	if err != nil {
+		return nil, err
+	}
 
-	return &proto.Response{Fibslice: string(jsonArray)}, nil
+	return &proto.Response{Slice: grpcSlice}, nil
+}
+
+func castSliceToGrpcType(fibSlice []*big.Int) ([]*proto.BigInt, error) {
+	grpcSlice := make([]*proto.BigInt, len(fibSlice))
+	for i := range fibSlice {
+		elem, err := fibSlice[i].MarshalText()
+		if err != nil {
+			return nil, err
+		}
+		grpcSlice[i] = &proto.BigInt{BigInt: elem}
+	}
+	return grpcSlice, nil
 }
 
 func startGrpcListener(errChan chan<- error) {
@@ -69,7 +84,10 @@ func GetFibonacciHttp(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Write([]byte(slice.ConvertIntArrayToStr(fibSlice)))
+	_, err = w.Write([]byte(slice.ConvertIntArrayToStr(fibSlice)))
+	if err != nil {
+		http.Error(w, "Error in writing slice", http.StatusInternalServerError)
+	}
 }
 
 func startHttpListener(errChan chan<- error) {

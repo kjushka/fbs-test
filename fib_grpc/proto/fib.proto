@@ -12,5 +12,9 @@ message Request {
 }
 
 message Response {
-  string fibslice = 1;
+  repeated BigInt slice = 1;
+}
+
+message BigInt {
+  bytes bigInt = 1;
 }
